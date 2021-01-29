@@ -1,9 +1,14 @@
 import { encode } from 'base-64';
-import { EventSourceState } from 'rn-eventsource-reborn';
-import { get } from './fetch/fetch';
-import { ErrorEvent, StateEvent, UpdateStream } from './UpdateStream';
 import { Observable, of, Subscription, throwError } from 'rxjs';
-import { timeout, retryWhen, mergeMap } from 'rxjs/operators';
+import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
+import { get } from './fetch/fetch';
+import {
+	ErrorEvent,
+	StateEvent,
+	UpdateStream,
+	UpdateStreamEvent,
+	UpdateStreamState
+} from './UpdateStream';
 
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
@@ -14,8 +19,8 @@ export class Databinding<T> {
 	private readonly realtimeUpdates: boolean;
 	private readonly userId: string;
 	private readonly apiToken: string;
-	private readonly updateStateCallback: (T) => void;
-	private readonly updateConnectionStateCallback: (EventSourceState) => void;
+	private readonly updateStateCallback: (t: T) => void;
+	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
 	private retries: number;
@@ -68,7 +73,7 @@ export class Databinding<T> {
 		});
 	}
 
-	getConnectionState(): EventSourceState {
+	getConnectionState(): UpdateStreamState {
 		return this.updateStream.getState();
 	}
 
@@ -82,35 +87,35 @@ export class Databinding<T> {
 		this.updateStream = new UpdateStream(this.updatePath,
 			{ headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) } });
 
-		this.updateStream.addUpdateEventHandler((event: MessageEvent) => {
+		this.updateStream.addEventListener('update', (event: MessageEvent) => {
 			console.log('EventSource: New update event');
 
 			const data: T = JSON.parse(event.data).newModel;
 			this.updateStateCallback(data);
 		});
 
-		this.updateStream.addStateEventHandler((event: StateEvent) => {
+		this.updateStream.addEventListener(UpdateStreamEvent.STATE, (event: StateEvent) => {
 			console.log('EventSource: State changed to ' + event.data);
 
 			this.updateConnectionStateCallback(this.updateStream.getState());
 		});
 
-		this.updateStream.addOpenEventHandler(() => {
+		this.updateStream.addEventListener(UpdateStreamEvent.OPEN, () => {
 			console.log('EventSource: Connection opened');
 		});
 
-		this.updateStream.addErrorEventHandler((event: ErrorEvent) => {
+		this.updateStream.addEventListener(UpdateStreamEvent.ERROR, (event: ErrorEvent) => {
 			console.log('EventSource: Error: ' + event.data);
 		});
 	}
 
 	private heartbeatRetry() {
-		return retryWhen(errors => errors.pipe(mergeMap(error => this.retries-- > 0 ? of(error) : throwError('Maximum of retries reached!'))))
+		return retryWhen(errors => errors.pipe(mergeMap(error => this.retries-- > 0 ? of(error) : throwError('Maximum of retries reached!'))));
 	}
 
 	private listenForHeartBeat(): void {
 		this.heartbeatSubscriber = new Observable(observer => {
-			this.updateStream.addHeartbeatEventHandler(() => {
+			this.updateStream.addEventListener('heartbeat', () => {
 				observer.next();
 			});
 		}).pipe(timeout(TIMEOUT), this.heartbeatRetry())

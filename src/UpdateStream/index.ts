@@ -4,6 +4,9 @@ import {
 	RNEventSource
 } from 'rn-eventsource-reborn';
 
+export {EventSourceEvent as UpdateStreamEvent} from 'rn-eventsource-reborn';
+export {EventSourceState as UpdateStreamState} from 'rn-eventsource-reborn';
+
 interface EventHandler {
 	(event: Event): void
 }
@@ -37,27 +40,7 @@ export class UpdateStream {
 		return this.eventSource.readyState;
 	}
 
-	addMessageEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener(EventSourceEvent.MESSAGE, callback, false);
-	}
-
-	addUpdateEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener('update', callback, false);
-	}
-
-	addHeartbeatEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener('heartbeat', callback, false);
-	}
-
-	addStateEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener(EventSourceEvent.STATE, callback, false);
-	}
-
-	addOpenEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener(EventSourceEvent.OPEN, callback, false);
-	}
-
-	addErrorEventHandler(callback: EventHandler): void {
-		this.eventSource.addEventListener(EventSourceEvent.ERROR, callback, false);
+	addEventListener(eventType: string | EventSourceEvent, callback: EventHandler): void {
+		this.eventSource.addEventListener(eventType, callback, false);
 	}
 }

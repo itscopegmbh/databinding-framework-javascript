@@ -43,7 +43,8 @@
   },
   "dependencies": {
     "base-64": "^1.0.0",
-    "rn-eventsource-reborn": "^1.0.5"
+    "rn-eventsource-reborn": "^1.0.5",
+    "rxjs": "^6.6.3"
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",

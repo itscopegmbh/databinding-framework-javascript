@@ -8,6 +8,11 @@ interface EventHandler {
 	(event: Event): void
 }
 
+export interface ErrorEvent extends Event {
+	type: EventSourceEvent.ERROR,
+	data: string,
+}
+
 export interface StateEvent extends Event {
 	type: EventSourceEvent.STATE,
 	data: EventSourceState,
@@ -34,6 +39,14 @@ export class UpdateStream {
 
 	addMessageEventHandler(callback: EventHandler): void {
 		this.eventSource.addEventListener(EventSourceEvent.MESSAGE, callback, false);
+	}
+
+	addUpdateEventHandler(callback: EventHandler): void {
+		this.eventSource.addEventListener('update', callback, false);
+	}
+
+	addHeartbeatEventHandler(callback: EventHandler): void {
+		this.eventSource.addEventListener('heartbeat', callback, false);
 	}
 
 	addStateEventHandler(callback: EventHandler): void {

@@ -2,6 +2,7 @@ import { encode } from 'base-64';
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
 import { get } from './fetch/fetch';
+import { LiveCollectionActionTypes } from './redux/LiveCollectionActionTypes';
 import {
 	ErrorEvent,
 	StateEvent,
@@ -13,39 +14,40 @@ import {
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
-export class Databinding<T> {
+export class LiveCollectionDatabinding<T> {
 	private readonly path: string;
 	private readonly updatePath: string;
-	private readonly realtimeUpdates: boolean;
 	private readonly userId: string;
 	private readonly apiToken: string;
-	private readonly updateStateCallback: (t: T) => void;
+	private readonly dispatch: (action) => void;
+	private readonly actionTypes: LiveCollectionActionTypes;
 	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
-	private retries: number;
+	private retries: number = MAX_HEARTBEATS_MISSING;
 
-	constructor(path: string, updatePath: string, realtimeUpdates: boolean,
-				userId: string, apiToken: string, updateStateCallback: (T) => void,
-				updateConnectionStateCallback: (EventSourceState) => void) {
+	constructor(path: string, updatePath: string, userId: string,
+				apiToken: string, dispatch: (action) => void,
+				actionTypes: LiveCollectionActionTypes,
+				updateConnectionStateCallback: (state: UpdateStreamState) => void) {
 		this.path = path;
 		this.updatePath = updatePath;
-		this.realtimeUpdates = realtimeUpdates;
 		this.userId = userId;
 		this.apiToken = apiToken;
-		this.updateStateCallback = updateStateCallback;
+		this.dispatch = dispatch;
+		this.actionTypes = actionTypes;
 		this.updateConnectionStateCallback = updateConnectionStateCallback;
-		this.retries = MAX_HEARTBEATS_MISSING;
 	}
 
 	getData(): void {
-		this.getStaticData().then((data: T) => {
-			this.updateStateCallback(data);
+		this.getStaticData().then((data: T[]) => {
+			this.dispatch({
+				type: this.actionTypes.SET_ENTITIES,
+				payload: data
+			});
 		}).then(() => {
-			if (this.realtimeUpdates) {
-				this.initUpdateStream();
-				this.listenForHeartBeat();
-			}
+			this.initUpdateStream();
+			this.listenForHeartBeat();
 		}).catch((error: Error) => {
 			console.log(error);
 		});
@@ -60,14 +62,16 @@ export class Databinding<T> {
 
 	reload(): void {
 		// fetch actual data
-		this.getStaticData().then((data: T) => {
-			this.updateStateCallback(data);
+		this.getStaticData().then((data: T[]) => {
+			this.dispatch({
+				type: this.actionTypes.SET_ENTITIES,
+				payload: data
+			});
 		}).then(() => {
-			// reconnect update stream when using realtime updates
-			if (this.realtimeUpdates) {
-				this.updateStream.reconnect();
-				this.listenForHeartBeat();
-			}
+			// reconnect update stream
+			this.updateStream.reconnect();
+			this.listenForHeartBeat();
+
 		}).catch((error: Error) => {
 			console.log(error);
 		});
@@ -77,7 +81,7 @@ export class Databinding<T> {
 		return this.updateStream.getState();
 	}
 
-	private getStaticData(): Promise<T> {
+	private getStaticData(): Promise<T[]> {
 		return get(this.path, {
 			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
 		});
@@ -90,8 +94,31 @@ export class Databinding<T> {
 		this.updateStream.addEventListener('update', (event: MessageEvent) => {
 			console.log('EventSource: New update event');
 
-			const data: T = JSON.parse(event.data).newModel;
-			this.updateStateCallback(data);
+			const data: T = JSON.parse(event.data);
+			this.dispatch({
+				type: this.actionTypes.UPDATE_ENTITY,
+				payload: data
+			});
+		});
+
+		this.updateStream.addEventListener('insert', (event: MessageEvent) => {
+			console.log('EventSource: New insert event');
+
+			const data: T = JSON.parse(event.data);
+			this.dispatch({
+				type: this.actionTypes.INSERT_ENTITY,
+				payload: data
+			});
+		});
+
+		this.updateStream.addEventListener('delete', (event: MessageEvent) => {
+			console.log('EventSource: New delete event');
+
+			const data: string = JSON.parse(event.data);
+			this.dispatch({
+				type: this.actionTypes.DELETE_ENTITY,
+				payload: data
+			});
 		});
 
 		this.updateStream.addEventListener(UpdateStreamEvent.STATE, (event: StateEvent) => {

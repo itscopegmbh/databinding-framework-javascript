@@ -1,33 +1,26 @@
 import { encode } from 'base-64';
+import { AbstractDatabinding } from './AbstractDatabinding';
 import { get } from './fetch/fetch';
 import { setEntities } from './redux/actions';
+import { buildPath, IQueryParameters } from './utils/utils';
 
-export class CollectionDatabinding<T> {
-	private readonly path: string;
-	private readonly userId: string;
-	private readonly apiToken: string;
-	private readonly dispatch: (action) => void;
-	private readonly stateProperty: string;
+export class CollectionDatabinding<T> extends AbstractDatabinding {
+	private readonly queryParameters: IQueryParameters;
 
-	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, stateProperty: string) {
-		this.path = path;
-		this.userId = userId;
-		this.apiToken = apiToken;
-		this.dispatch = dispatch;
-		this.stateProperty = stateProperty;
+	constructor(path: string, userId: string, apiToken: string,
+				dispatch: (action) => void, stateProperty: string,
+				queryParameters: IQueryParameters) {
+		super(path, userId, apiToken, dispatch, stateProperty);
+		this.queryParameters = queryParameters;
 	}
 
 	getData(): void {
-		this.getStaticData().then((data: T[]) => {
+		get(buildPath(this.path, this.queryParameters), {
+			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
-			console.log(error);
-		});
-	}
-
-	private getStaticData(): Promise<T[]> {
-		return get(this.path, {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+			console.error(error);
 		});
 	}
 }

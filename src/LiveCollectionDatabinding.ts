@@ -1,6 +1,7 @@
 import { encode } from 'base-64';
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
+import { AbstractDatabinding } from './AbstractDatabinding';
 import { get } from './fetch/fetch';
 import {
 	deleteEntity,
@@ -15,43 +16,37 @@ import {
 	UpdateStreamEvent,
 	UpdateStreamState
 } from './UpdateStream';
+import { buildPath, IQueryParameters } from './utils/utils';
 
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
-export class LiveCollectionDatabinding<T> {
-	private readonly path: string;
-	private readonly updatePath: string;
-	private readonly userId: string;
-	private readonly apiToken: string;
-	private readonly dispatch: (action) => void;
-	private readonly stateProperty: string;
+export class LiveCollectionDatabinding<T> extends AbstractDatabinding {
+	private readonly queryParameters: IQueryParameters;
 	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
 	private retries: number = MAX_HEARTBEATS_MISSING;
 
-	constructor(path: string, updatePath: string, userId: string,
-				apiToken: string, dispatch: (action) => void,
-				stateProperty: string,
+	constructor(path: string, userId: string, apiToken: string,
+				dispatch: (action) => void, stateProperty: string,
+				queryParameters: IQueryParameters,
 				updateConnectionStateCallback: (state: UpdateStreamState) => void) {
-		this.path = path;
-		this.updatePath = updatePath;
-		this.userId = userId;
-		this.apiToken = apiToken;
-		this.dispatch = dispatch;
-		this.stateProperty = stateProperty;
+		super(path, userId, apiToken, dispatch, stateProperty);
+		this.queryParameters = queryParameters;
 		this.updateConnectionStateCallback = updateConnectionStateCallback;
 	}
 
 	getData(): void {
-		this.getStaticData().then((data: T[]) => {
+		get(buildPath(this.path, this.queryParameters), {
+			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).then(() => {
 			this.initUpdateStream();
 			this.listenForHeartBeat();
 		}).catch((error: Error) => {
-			console.log(error);
+			console.error(error);
 		});
 	}
 
@@ -63,17 +58,15 @@ export class LiveCollectionDatabinding<T> {
 	}
 
 	reload(): void {
-		// fetch actual data
-		this.getStaticData().then((data: T[]) => {
+		get(buildPath(this.path, this.queryParameters), {
+			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
-
 		}).then(() => {
-			// reconnect update stream
 			this.updateStream.reconnect();
 			this.listenForHeartBeat();
-
 		}).catch((error: Error) => {
-			console.log(error);
+			console.error(error);
 		});
 	}
 
@@ -81,14 +74,8 @@ export class LiveCollectionDatabinding<T> {
 		return this.updateStream.getState();
 	}
 
-	private getStaticData(): Promise<T[]> {
-		return get(this.path, {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
-		});
-	}
-
 	private initUpdateStream() {
-		this.updateStream = new UpdateStream(this.updatePath,
+		this.updateStream = new UpdateStream(buildPath(this.path, this.queryParameters, true),
 			{ headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) } });
 
 		this.updateStream.addEventListener('update', (event: MessageEvent) => {
@@ -96,7 +83,6 @@ export class LiveCollectionDatabinding<T> {
 
 			const data: T = JSON.parse(event.data);
 			this.dispatch(updateEntity<T>(this.stateProperty, data));
-
 		});
 
 		this.updateStream.addEventListener('insert', (event: MessageEvent) => {
@@ -104,7 +90,6 @@ export class LiveCollectionDatabinding<T> {
 
 			const data: T = JSON.parse(event.data);
 			this.dispatch(insertEntity<T>(this.stateProperty, data));
-
 		});
 
 		this.updateStream.addEventListener('delete', (event: MessageEvent) => {
@@ -125,7 +110,7 @@ export class LiveCollectionDatabinding<T> {
 		});
 
 		this.updateStream.addEventListener(UpdateStreamEvent.ERROR, (event: ErrorEvent) => {
-			console.log('EventSource: Error: ' + event.data);
+			console.error('EventSource: Error: ' + event.data);
 		});
 	}
 
@@ -145,7 +130,7 @@ export class LiveCollectionDatabinding<T> {
 					this.retries = MAX_HEARTBEATS_MISSING;
 				},
 				error: (error) => {
-					console.log('EventSource: Server is down (' + error + ')');
+					console.error('EventSource: Server is down (' + error + ')');
 					this.updateStream.close();
 				}
 			});

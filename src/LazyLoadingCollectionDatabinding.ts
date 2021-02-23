@@ -1,43 +1,44 @@
 import { encode } from 'base-64';
+import { AbstractDatabinding } from './AbstractDatabinding';
 import { get } from './fetch/fetch';
 import { insertEntities, setEntities } from './redux/actions';
+import {
+	buildPath,
+	ILazyLoadingQueryParameters,
+	IQueryParameters
+} from './utils/utils';
 
-export class LazyLoadingCollectionDatabinding<T> {
-	private readonly path: string;
-	private readonly userId: string;
-	private readonly apiToken: string;
-	private readonly dispatch: (action) => void;
-	private readonly stateProperty: string;
-	private actualPage = 1;
+export class LazyLoadingCollectionDatabinding<T> extends AbstractDatabinding {
+	protected readonly queryParameters: ILazyLoadingQueryParameters;
 
-	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, stateProperty: string) {
-		this.path = path;
-		this.userId = userId;
-		this.apiToken = apiToken;
-		this.dispatch = dispatch;
-		this.stateProperty = stateProperty;
+	constructor(path: string, userId: string, apiToken: string,
+				dispatch: (action) => void, stateProperty: string,
+				queryParameters: IQueryParameters) {
+		super(path, userId, apiToken, dispatch, stateProperty);
+		this.queryParameters = {
+			page: 1,
+			...queryParameters
+		};
 	}
 
 	getData(): void {
-		this.getStaticData(this.path + '&page=' + this.actualPage).then((data: T[]) => {
+		get(buildPath(this.path, this.queryParameters), {
+			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
-			console.log(error);
+			console.error(error);
 		});
 	}
 
 	getNextPage(): void {
-		this.actualPage++;
-		this.getStaticData(this.path  + '&page=' + this.actualPage).then((data: T[]) => {
+		this.queryParameters.page++;
+		get(buildPath(this.path, this.queryParameters), {
+			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+		}).then((data: T[]) => {
 			this.dispatch(insertEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
-			console.log(error);
-		});
-	}
-
-	private getStaticData(path: string): Promise<T[]> {
-		return get(path, {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
+			console.error(error);
 		});
 	}
 }

@@ -2,7 +2,12 @@ import { encode } from 'base-64';
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
 import { get } from './fetch/fetch';
-import { LiveCollectionActionTypes } from './redux/LiveCollectionActionTypes';
+import {
+	deleteEntity,
+	insertEntity,
+	setEntities,
+	updateEntity
+} from './redux/actions';
 import {
 	ErrorEvent,
 	StateEvent,
@@ -20,7 +25,7 @@ export class LiveCollectionDatabinding<T> {
 	private readonly userId: string;
 	private readonly apiToken: string;
 	private readonly dispatch: (action) => void;
-	private readonly actionTypes: LiveCollectionActionTypes;
+	private readonly stateProperty: string;
 	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
@@ -28,23 +33,20 @@ export class LiveCollectionDatabinding<T> {
 
 	constructor(path: string, updatePath: string, userId: string,
 				apiToken: string, dispatch: (action) => void,
-				actionTypes: LiveCollectionActionTypes,
+				stateProperty: string,
 				updateConnectionStateCallback: (state: UpdateStreamState) => void) {
 		this.path = path;
 		this.updatePath = updatePath;
 		this.userId = userId;
 		this.apiToken = apiToken;
 		this.dispatch = dispatch;
-		this.actionTypes = actionTypes;
+		this.stateProperty = stateProperty;
 		this.updateConnectionStateCallback = updateConnectionStateCallback;
 	}
 
 	getData(): void {
 		this.getStaticData().then((data: T[]) => {
-			this.dispatch({
-				type: this.actionTypes.SET_ENTITIES,
-				payload: data
-			});
+			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).then(() => {
 			this.initUpdateStream();
 			this.listenForHeartBeat();
@@ -63,10 +65,8 @@ export class LiveCollectionDatabinding<T> {
 	reload(): void {
 		// fetch actual data
 		this.getStaticData().then((data: T[]) => {
-			this.dispatch({
-				type: this.actionTypes.SET_ENTITIES,
-				payload: data
-			});
+			this.dispatch(setEntities<T>(this.stateProperty, data));
+
 		}).then(() => {
 			// reconnect update stream
 			this.updateStream.reconnect();
@@ -95,30 +95,23 @@ export class LiveCollectionDatabinding<T> {
 			console.log('EventSource: New update event');
 
 			const data: T = JSON.parse(event.data);
-			this.dispatch({
-				type: this.actionTypes.UPDATE_ENTITY,
-				payload: data
-			});
+			this.dispatch(updateEntity<T>(this.stateProperty, data));
+
 		});
 
 		this.updateStream.addEventListener('insert', (event: MessageEvent) => {
 			console.log('EventSource: New insert event');
 
 			const data: T = JSON.parse(event.data);
-			this.dispatch({
-				type: this.actionTypes.INSERT_ENTITY,
-				payload: data
-			});
+			this.dispatch(insertEntity<T>(this.stateProperty, data));
+
 		});
 
 		this.updateStream.addEventListener('delete', (event: MessageEvent) => {
 			console.log('EventSource: New delete event');
 
 			const data: string = JSON.parse(event.data);
-			this.dispatch({
-				type: this.actionTypes.DELETE_ENTITY,
-				payload: data
-			});
+			this.dispatch(deleteEntity<T>(this.stateProperty, data));
 		});
 
 		this.updateStream.addEventListener(UpdateStreamEvent.STATE, (event: StateEvent) => {

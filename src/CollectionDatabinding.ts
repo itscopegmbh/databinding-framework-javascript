@@ -1,25 +1,25 @@
 import { encode } from 'base-64';
 import { get } from './fetch/fetch';
-import { CollectionActionTypes } from './redux/CollectionActionTypes';
+import { setEntities } from './redux/actions';
 
 export class CollectionDatabinding<T> {
 	private readonly path: string;
 	private readonly userId: string;
 	private readonly apiToken: string;
 	private readonly dispatch: (action) => void;
-	private readonly actionTypes: CollectionActionTypes;
+	private readonly stateProperty: string;
 
-	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, actionTypes: CollectionActionTypes) {
+	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, stateProperty: string) {
 		this.path = path;
 		this.userId = userId;
 		this.apiToken = apiToken;
 		this.dispatch = dispatch;
-		this.actionTypes = actionTypes;
+		this.stateProperty = stateProperty;
 	}
 
 	getData(): void {
 		this.getStaticData().then((data: T[]) => {
-			this.dispatch({ type: this.actionTypes.SET_ENTITIES, payload: data });
+			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
 			console.log(error);
 		});

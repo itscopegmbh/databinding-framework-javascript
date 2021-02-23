@@ -1,30 +1,26 @@
 import { encode } from 'base-64';
 import { get } from './fetch/fetch';
-import { CollectionActionTypes } from './redux/CollectionActionTypes';
-import { LazyLoadingActionTypes } from './redux/LazyLoadingActionTypes';
+import { insertEntities, setEntities } from './redux/actions';
 
 export class LazyLoadingCollectionDatabinding<T> {
 	private readonly path: string;
 	private readonly userId: string;
 	private readonly apiToken: string;
 	private readonly dispatch: (action) => void;
-	private readonly actionTypes: CollectionActionTypes & LazyLoadingActionTypes;
+	private readonly stateProperty: string;
 	private actualPage = 1;
 
-	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, actionTypes: CollectionActionTypes & LazyLoadingActionTypes) {
+	constructor(path: string, userId: string, apiToken: string, dispatch: (action) => void, stateProperty: string) {
 		this.path = path;
 		this.userId = userId;
 		this.apiToken = apiToken;
 		this.dispatch = dispatch;
-		this.actionTypes = actionTypes;
+		this.stateProperty = stateProperty;
 	}
 
 	getData(): void {
 		this.getStaticData(this.path + '&page=' + this.actualPage).then((data: T[]) => {
-			this.dispatch({
-				type: this.actionTypes.SET_ENTITIES,
-				payload: data
-			});
+			this.dispatch(setEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
 			console.log(error);
 		});
@@ -33,10 +29,7 @@ export class LazyLoadingCollectionDatabinding<T> {
 	getNextPage(): void {
 		this.actualPage++;
 		this.getStaticData(this.path  + '&page=' + this.actualPage).then((data: T[]) => {
-			this.dispatch({
-				type: this.actionTypes.INSERT_ENTITIES,
-				payload: data
-			});
+			this.dispatch(insertEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
 			console.log(error);
 		});

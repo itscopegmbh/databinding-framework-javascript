@@ -1,15 +1,16 @@
 import { encode } from 'base-64';
-import { AbstractDatabinding } from './AbstractDatabinding';
-import { get } from './fetch/fetch';
-import { insertEntities, setEntities } from './redux/actions';
+import { get } from '../fetch/fetch';
+import { insertEntities, setEntities } from '../redux/actions';
+import { Entity } from '../redux/types';
 import {
 	buildPath,
 	ILazyLoadingQueryParameters,
 	IQueryParameters
-} from './utils/utils';
+} from '../utils/buildPath';
+import { AbstractDatabinding } from './AbstractDatabinding';
 
-export class LazyLoadingCollectionDatabinding<T> extends AbstractDatabinding {
-	protected readonly queryParameters: ILazyLoadingQueryParameters;
+export class LazyLoadingCollectionDatabinding<T extends Entity> extends AbstractDatabinding {
+	private readonly queryParameters: ILazyLoadingQueryParameters;
 
 	constructor(path: string, userId: string, apiToken: string,
 				dispatch: (action) => void, stateProperty: string,

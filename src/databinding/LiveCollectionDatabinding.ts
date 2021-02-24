@@ -1,27 +1,28 @@
 import { encode } from 'base-64';
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
-import { AbstractDatabinding } from './AbstractDatabinding';
-import { get } from './fetch/fetch';
+import { get } from '../fetch/fetch';
 import {
 	deleteEntity,
 	insertEntity,
 	setEntities,
 	updateEntity
-} from './redux/actions';
+} from '../redux/actions';
+import { Entity } from '../redux/types';
 import {
 	ErrorEvent,
 	StateEvent,
 	UpdateStream,
 	UpdateStreamEvent,
 	UpdateStreamState
-} from './UpdateStream';
-import { buildPath, IQueryParameters } from './utils/utils';
+} from '../updateStream';
+import { buildPath, IQueryParameters } from '../utils/buildPath';
+import { AbstractDatabinding } from './AbstractDatabinding';
 
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
-export class LiveCollectionDatabinding<T> extends AbstractDatabinding {
+export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabinding {
 	private readonly queryParameters: IQueryParameters;
 	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
@@ -95,7 +96,7 @@ export class LiveCollectionDatabinding<T> extends AbstractDatabinding {
 		this.updateStream.addEventListener('delete', (event: MessageEvent) => {
 			console.log('EventSource: New delete event');
 
-			const data: string = JSON.parse(event.data);
+			const data: { serial: string } = JSON.parse(event.data);
 			this.dispatch(deleteEntity<T>(this.stateProperty, data));
 		});
 

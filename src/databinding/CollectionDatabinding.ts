@@ -1,10 +1,11 @@
 import { encode } from 'base-64';
+import { Entity } from '../redux/types';
 import { AbstractDatabinding } from './AbstractDatabinding';
-import { get } from './fetch/fetch';
-import { setEntities } from './redux/actions';
-import { buildPath, IQueryParameters } from './utils/utils';
+import { get } from '../fetch/fetch';
+import { setEntities } from '../redux/actions';
+import { buildPath, IQueryParameters } from '../utils/buildPath';
 
-export class CollectionDatabinding<T> extends AbstractDatabinding {
+export class CollectionDatabinding<T extends Entity> extends AbstractDatabinding {
 	private readonly queryParameters: IQueryParameters;
 
 	constructor(path: string, userId: string, apiToken: string,

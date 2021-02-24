@@ -1,3 +1,11 @@
+export interface Entity {
+	uniqueId: string;
+}
+
+export interface State {
+	[key: string]: Entity | Entity[]
+}
+
 export const SET_ENTITY = 'SET_ENTITY';
 export const SET_ENTITIES = 'SET_ENTITIES';
 export const INSERT_ENTITIES = 'INSERT_ENTITIES';
@@ -5,7 +13,7 @@ export const UPDATE_ENTITY = 'UPDATE_ENTITY';
 export const INSERT_ENTITY = 'INSERT_ENTITY';
 export const DELETE_ENTITY = 'DELETE_ENTITY';
 
-interface SetEntityAction<T> {
+interface SetEntityAction<T extends Entity> {
 	type: typeof SET_ENTITY
 	payload: {
 		property: string,
@@ -13,7 +21,7 @@ interface SetEntityAction<T> {
 	}
 }
 
-interface SetEntitiesAction<T> {
+interface SetEntitiesAction<T extends Entity> {
 	type: typeof SET_ENTITIES
 	payload: {
 		property: string,
@@ -21,7 +29,7 @@ interface SetEntitiesAction<T> {
 	}
 }
 
-interface InsertEntitiesAction<T> {
+interface InsertEntitiesAction<T extends Entity> {
 	type: typeof INSERT_ENTITIES
 	payload: {
 		property: string,
@@ -29,7 +37,7 @@ interface InsertEntitiesAction<T> {
 	}
 }
 
-interface UpdateEntityAction<T> {
+interface UpdateEntityAction<T extends Entity> {
 	type: typeof UPDATE_ENTITY
 	payload: {
 		property: string,
@@ -37,7 +45,7 @@ interface UpdateEntityAction<T> {
 	}
 }
 
-interface InsertEntityAction<T> {
+interface InsertEntityAction<T extends Entity> {
 	type: typeof INSERT_ENTITY
 	payload: {
 		property: string,
@@ -49,11 +57,13 @@ interface DeleteEntityAction {
 	type: typeof DELETE_ENTITY
 	payload: {
 		property: string,
-		value: string
+		value: {
+			serial: string
+		}
 	}
 }
 
-export type Actions<T> =
+export type Actions<T extends Entity> =
 	SetEntityAction<T>
 	| SetEntitiesAction<T>
 	| InsertEntitiesAction<T>

@@ -1,6 +1,13 @@
+export { State, Entity } from './redux/types';
+export { SingleDatabinding } from './databinding/SingleDatabinding';
+export { CollectionDatabinding } from './databinding/CollectionDatabinding';
+export {
+	LazyLoadingCollectionDatabinding
+} from './databinding/LazyLoadingCollectionDatabinding';
+export {
+	LiveCollectionDatabinding
+} from './databinding/LiveCollectionDatabinding';
 export { createDatabindingReducer } from './redux/reducers';
-export { SingleDatabinding } from './SingleDatabinding';
-export { CollectionDatabinding } from './CollectionDatabinding';
-export { UpdateStreamState } from './UpdateStream';
-export { LazyLoadingCollectionDatabinding } from './LazyLoadingCollectionDatabinding';
+export { UpdateStreamState } from './updateStream';
+
 

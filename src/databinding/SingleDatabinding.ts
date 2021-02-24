@@ -2,7 +2,7 @@ import { encode } from 'base-64';
 import { Entity } from '../redux/types';
 import { AbstractDatabinding } from './AbstractDatabinding';
 import { get } from '../fetch/fetch';
-import { setEntity } from '../redux/actions';
+import { setEntity, setFetching } from '../redux/actions';
 import { buildPath, IQueryParameters } from '../utils/buildPath';
 
 export class SingleDatabinding<T extends Entity> extends AbstractDatabinding {
@@ -16,10 +16,12 @@ export class SingleDatabinding<T extends Entity> extends AbstractDatabinding {
 	}
 
 	getData(): void {
+		this.dispatch(setFetching<T>(this.stateProperty, true));
 		get(buildPath(this.path, this.queryParameters), {
 			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
 		}).then((data: T) => {
 			this.dispatch(setEntity<T>(this.stateProperty, data));
+			this.dispatch(setFetching<T>(this.stateProperty, false));
 		}).catch((error: Error) => {
 			console.error(error);
 		});

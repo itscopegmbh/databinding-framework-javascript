@@ -4,8 +4,8 @@ import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
 import { get } from '../fetch/fetch';
 import {
 	deleteEntity,
-	insertEntity,
-	setEntities,
+	insertEntity, setConnectionState,
+	setEntities, setFetching,
 	updateEntity
 } from '../redux/actions';
 import { Entity } from '../redux/types';
@@ -24,26 +24,25 @@ const TIMEOUT = 16000;
 
 export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabinding {
 	private readonly queryParameters: IQueryParameters;
-	private readonly updateConnectionStateCallback: (state: UpdateStreamState) => void;
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
 	private retries: number = MAX_HEARTBEATS_MISSING;
 
 	constructor(path: string, userId: string, apiToken: string,
 				dispatch: (action) => void, stateProperty: string,
-				queryParameters: IQueryParameters,
-				updateConnectionStateCallback: (state: UpdateStreamState) => void) {
+				queryParameters: IQueryParameters) {
 		super(path, userId, apiToken, dispatch, stateProperty);
 		this.queryParameters = queryParameters;
-		this.updateConnectionStateCallback = updateConnectionStateCallback;
 	}
 
 	getData(): void {
+		this.dispatch(setFetching<T>(this.stateProperty, true));
+		this.dispatch(setConnectionState<T>(this.stateProperty, UpdateStreamState.CLOSED));
 		get(buildPath(this.path, this.queryParameters), {
 			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
 		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
-		}).then(() => {
+			this.dispatch(setFetching<T>(this.stateProperty, false));
 			this.initUpdateStream();
 			this.listenForHeartBeat();
 		}).catch((error: Error) => {
@@ -59,20 +58,17 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 	}
 
 	reload(): void {
+		this.dispatch(setFetching<T>(this.stateProperty, true));
 		get(buildPath(this.path, this.queryParameters), {
 			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
 		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
-		}).then(() => {
+			this.dispatch(setFetching<T>(this.stateProperty, false));
 			this.updateStream.reconnect();
 			this.listenForHeartBeat();
 		}).catch((error: Error) => {
 			console.error(error);
 		});
-	}
-
-	getConnectionState(): UpdateStreamState {
-		return this.updateStream.getState();
 	}
 
 	private initUpdateStream() {
@@ -103,7 +99,7 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 		this.updateStream.addEventListener(UpdateStreamEvent.STATE, (event: StateEvent) => {
 			console.log('EventSource: State changed to ' + event.data);
 
-			this.updateConnectionStateCallback(this.updateStream.getState());
+			this.dispatch(setConnectionState<T>(this.stateProperty, this.updateStream.getState()));
 		});
 
 		this.updateStream.addEventListener(UpdateStreamEvent.OPEN, () => {

@@ -1,6 +1,6 @@
 import { encode } from 'base-64';
 import { get } from '../fetch/fetch';
-import { insertEntities, setEntities } from '../redux/actions';
+import { insertEntities, setEntities, setFetching } from '../redux/actions';
 import { Entity } from '../redux/types';
 import {
 	buildPath,
@@ -23,10 +23,12 @@ export class LazyLoadingCollectionDatabinding<T extends Entity> extends Abstract
 	}
 
 	getData(): void {
+		this.dispatch(setFetching<T>(this.stateProperty, true));
 		get(buildPath(this.path, this.queryParameters), {
 			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
 		}).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
+			this.dispatch(setFetching<T>(this.stateProperty, false));
 		}).catch((error: Error) => {
 			console.error(error);
 		});

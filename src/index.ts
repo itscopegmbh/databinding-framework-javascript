@@ -1,4 +1,15 @@
-export { State, Entity } from './redux/types';
+export {
+	DatabindingState,
+	SingleState,
+	LiveSingleState,
+	CollectionState,
+	LiveCollectionState,
+	initialSingleState,
+	initialCollectionState,
+	initialLiveCollectionState,
+	initialLiveSingleState,
+	Entity
+} from './redux/types';
 export { SingleDatabinding } from './databinding/SingleDatabinding';
 export { CollectionDatabinding } from './databinding/CollectionDatabinding';
 export {

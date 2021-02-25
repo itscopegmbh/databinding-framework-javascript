@@ -23,6 +23,9 @@ import { AbstractDatabinding } from './AbstractDatabinding';
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
+/**
+ * Databinding for binding a collection of an Entity with realtime updates.
+ */
 export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabinding<T> {
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
@@ -32,6 +35,10 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 		super(path, headers, queryParameters, stateProperty, dispatch);
 	}
 
+	/**
+	 * Fetches the data and stores it in the state. Existing data will be replaced.
+	 * Opens an update stream to get realtime updates.
+	 */
 	getData(): void {
 		this.dispatch(setFetching<T>(this.stateProperty, true));
 		this.dispatch(setConnectionState<T>(this.stateProperty, UpdateStreamState.CLOSED));
@@ -45,6 +52,9 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 		});
 	}
 
+	/**
+	 * Closes the update stream.
+	 */
 	close(): void {
 		if (this.updateStream) {
 			this.updateStream.close();
@@ -55,6 +65,10 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 		}
 	}
 
+	/**
+	 * Fetches the data and stores it in the state. Existing data will be replaced.
+	 * Reconnects to the update stream to get realtime updates.
+	 */
 	reload(): void {
 		this.dispatch(setFetching<T>(this.stateProperty, true));
 		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {

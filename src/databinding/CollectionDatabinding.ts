@@ -4,11 +4,17 @@ import { Actions, Entity } from '../redux/types';
 import { buildUri, IHeaders, IQueryParameters } from '../utils/buildUri';
 import { AbstractDatabinding } from './AbstractDatabinding';
 
+/**
+ * Databinding for binding a collection of an Entity.
+ */
 export class CollectionDatabinding<T extends Entity> extends AbstractDatabinding<T> {
 	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		super(path, headers, queryParameters, stateProperty, dispatch);
 	}
 
+	/**
+	 * Fetches the data and stores it in the state. Existing data will be replaced.
+	 */
 	getData(): void {
 		this.dispatch(setFetching<T>(this.stateProperty, true));
 		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
@@ -19,6 +25,11 @@ export class CollectionDatabinding<T extends Entity> extends AbstractDatabinding
 		});
 	}
 
+	/**
+	 * Set the query parameters. To fetch the data for the new query parameters
+	 * call {@link getData()}.
+	 * @param queryParameters
+	 */
 	setQueryParameters(queryParameters: IQueryParameters): void {
 		this.queryParameters = queryParameters;
 	}

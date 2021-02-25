@@ -10,12 +10,19 @@ import {
 } from '../utils/buildUri';
 import { CollectionDatabinding } from './CollectionDatabinding';
 
+/**
+ * Databinding for binding a collection of an Entity with Lazy loading.
+ */
 export class LazyLoadingCollectionDatabinding<T extends Entity> extends CollectionDatabinding<T> {
 	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		const lazyLoadingQueryParam = convertToLazyLoadingQueryParam(queryParameters);
 		super(path, headers, lazyLoadingQueryParam, stateProperty, dispatch);
 	}
 
+	/**
+	 * Fetches the data of the next page and stores it in the state.
+	 * The data will be append to the existing data.
+	 */
 	getNextPage(): void {
 		(this.queryParameters as ILazyLoadingQueryParameters).page++;
 		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
@@ -25,6 +32,11 @@ export class LazyLoadingCollectionDatabinding<T extends Entity> extends Collecti
 		});
 	}
 
+	/**
+	 * Set the query parameters. To fetch the data for the new query parameters
+	 * call {@link getData()}.
+	 * @param queryParameters
+	 */
 	setQueryParameters(queryParameters: IQueryParameters): void {
 		this.queryParameters = convertToLazyLoadingQueryParam(queryParameters);
 	}

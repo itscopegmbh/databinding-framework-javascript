@@ -18,4 +18,8 @@ export class CollectionDatabinding<T extends Entity> extends AbstractDatabinding
 			console.error(error);
 		});
 	}
+
+	setQueryParameters(queryParameters: IQueryParameters): void {
+		this.queryParameters = queryParameters;
+	}
 }

@@ -10,6 +10,13 @@ export interface IHeaders {
 	headers: Record<string, string>
 }
 
+export const convertToLazyLoadingQueryParam = (queryParameters: IQueryParameters, page = 1): ILazyLoadingQueryParameters => {
+	return {
+		...queryParameters,
+		page: page
+	};
+}
+
 export const buildUri = (path: string, queryParameters: IQueryParameters, createUpdatePath = false): string => {
 	let uri = path;
 	if (createUpdatePath) {

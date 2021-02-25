@@ -4,7 +4,7 @@ import { IHeaders, IQueryParameters } from '../utils/buildUri';
 export abstract class AbstractDatabinding<T extends Entity> {
 	protected readonly path: string;
 	protected readonly headers: IHeaders;
-	protected readonly queryParameters: IQueryParameters;
+	protected queryParameters: IQueryParameters;
 	protected readonly stateProperty: string;
 	protected readonly dispatch: (action: Actions<T>) => void;
 

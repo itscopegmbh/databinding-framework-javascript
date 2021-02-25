@@ -1,44 +1,28 @@
-import { encode } from 'base-64';
 import { get } from '../fetch/fetch';
-import { insertEntities, setEntities, setFetching } from '../redux/actions';
-import { Entity } from '../redux/types';
+import { insertEntities } from '../redux/actions';
+import { Actions, Entity } from '../redux/types';
 import {
-	buildPath,
+	buildUri,
+	IHeaders,
 	ILazyLoadingQueryParameters,
 	IQueryParameters
-} from '../utils/buildPath';
-import { AbstractDatabinding } from './AbstractDatabinding';
+} from '../utils/buildUri';
+import { CollectionDatabinding } from './CollectionDatabinding';
 
-export class LazyLoadingCollectionDatabinding<T extends Entity> extends AbstractDatabinding {
-	private readonly queryParameters: ILazyLoadingQueryParameters;
-
-	constructor(path: string, userId: string, apiToken: string,
-				dispatch: (action) => void, stateProperty: string,
-				queryParameters: IQueryParameters) {
-		super(path, userId, apiToken, dispatch, stateProperty);
-		this.queryParameters = {
-			page: 1,
-			...queryParameters
+export class LazyLoadingCollectionDatabinding<T extends Entity> extends CollectionDatabinding<T> {
+	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
+		const lazyLoadingQueryParameters: ILazyLoadingQueryParameters = {
+			...queryParameters,
+			page: 1
 		};
-	}
 
-	getData(): void {
-		this.dispatch(setFetching<T>(this.stateProperty, true));
-		get(buildPath(this.path, this.queryParameters), {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
-		}).then((data: T[]) => {
-			this.dispatch(setEntities<T>(this.stateProperty, data));
-			this.dispatch(setFetching<T>(this.stateProperty, false));
-		}).catch((error: Error) => {
-			console.error(error);
-		});
+		super(path, headers, lazyLoadingQueryParameters, stateProperty, dispatch);
 	}
 
 	getNextPage(): void {
-		this.queryParameters.page++;
-		get(buildPath(this.path, this.queryParameters), {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
-		}).then((data: T[]) => {
+		(this.queryParameters as ILazyLoadingQueryParameters).page++;
+
+		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
 			this.dispatch(insertEntities<T>(this.stateProperty, data));
 		}).catch((error: Error) => {
 			console.error(error);

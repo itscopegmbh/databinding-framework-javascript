@@ -1,16 +1,18 @@
-export abstract class AbstractDatabinding {
-	protected readonly path: string;
-	protected readonly userId: string;
-	protected readonly apiToken: string;
-	protected readonly dispatch: (action) => void;
-	protected readonly stateProperty: string;
+import { Actions, Entity } from '../redux/types';
+import { IHeaders, IQueryParameters } from '../utils/buildUri';
 
-	protected constructor(path: string, userId: string, apiToken: string,
-						dispatch: (action) => void, stateProperty: string) {
+export abstract class AbstractDatabinding<T extends Entity> {
+	protected readonly path: string;
+	protected readonly headers: IHeaders;
+	protected readonly queryParameters: IQueryParameters;
+	protected readonly stateProperty: string;
+	protected readonly dispatch: (action: Actions<T>) => void;
+
+	protected constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		this.path = path;
-		this.userId = userId;
-		this.apiToken = apiToken;
-		this.dispatch = dispatch;
+		this.headers = headers;
+		this.queryParameters = queryParameters;
 		this.stateProperty = stateProperty;
+		this.dispatch = dispatch;
 	}
 }

@@ -6,10 +6,14 @@ export interface ILazyLoadingQueryParameters extends IQueryParameters {
 	page: number
 }
 
-export const buildPath = (baseUrl: string, queryParameters: IQueryParameters, createUpdatePath = false): string => {
-	let path = baseUrl;
+export interface IHeaders {
+	headers: Record<string, string>
+}
+
+export const buildUri = (path: string, queryParameters: IQueryParameters, createUpdatePath = false): string => {
+	let uri = path;
 	if (createUpdatePath) {
-		path += '/update';
+		uri += '/update';
 	}
 	let index = 0;
 	if (Object.keys(queryParameters).length > 0) {
@@ -17,13 +21,17 @@ export const buildPath = (baseUrl: string, queryParameters: IQueryParameters, cr
 			if (Object.prototype.hasOwnProperty.call(queryParameters, key)) {
 				const value = queryParameters[key];
 				if (index === 0) {
-					path = path + '?' + key + '=' + value;
+					uri = uri + '?' + key + '=' + value;
 				} else {
-					path = path + '&' + key + '=' + value;
+					uri = uri + '&' + key + '=' + value;
 				}
 				index++;
 			}
 		}
 	}
-	return path;
+	return uri;
 };
+
+
+
+

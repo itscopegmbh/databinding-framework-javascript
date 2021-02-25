@@ -1,14 +1,15 @@
-import { encode } from 'base-64';
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
 import { get } from '../fetch/fetch';
 import {
 	deleteEntity,
-	insertEntity, setConnectionState,
-	setEntities, setFetching,
+	insertEntity,
+	setConnectionState,
+	setEntities,
+	setFetching,
 	updateEntity
 } from '../redux/actions';
-import { Entity } from '../redux/types';
+import { Actions, Entity } from '../redux/types';
 import {
 	ErrorEvent,
 	StateEvent,
@@ -16,35 +17,29 @@ import {
 	UpdateStreamEvent,
 	UpdateStreamState
 } from '../updateStream';
-import { buildPath, IQueryParameters } from '../utils/buildPath';
+import { buildUri, IHeaders, IQueryParameters } from '../utils/buildUri';
 import { AbstractDatabinding } from './AbstractDatabinding';
 
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
-export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabinding {
-	private readonly queryParameters: IQueryParameters;
+export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabinding<T> {
 	private updateStream: UpdateStream;
 	private heartbeatSubscriber: Subscription;
-	private retries: number = MAX_HEARTBEATS_MISSING;
+	private heartbeatsMissing: number = MAX_HEARTBEATS_MISSING;
 
-	constructor(path: string, userId: string, apiToken: string,
-				dispatch: (action) => void, stateProperty: string,
-				queryParameters: IQueryParameters) {
-		super(path, userId, apiToken, dispatch, stateProperty);
-		this.queryParameters = queryParameters;
+	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
+		super(path, headers, queryParameters, stateProperty, dispatch);
 	}
 
 	getData(): void {
 		this.dispatch(setFetching<T>(this.stateProperty, true));
 		this.dispatch(setConnectionState<T>(this.stateProperty, UpdateStreamState.CLOSED));
-		get(buildPath(this.path, this.queryParameters), {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
-		}).then((data: T[]) => {
+		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
 			this.dispatch(setFetching<T>(this.stateProperty, false));
 			this.initUpdateStream();
-			this.listenForHeartBeat();
+			this.listenForHeartbeat();
 		}).catch((error: Error) => {
 			console.error(error);
 		});
@@ -53,27 +48,27 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 	close(): void {
 		if (this.updateStream) {
 			this.updateStream.close();
+		}
+
+		if (this.heartbeatSubscriber) {
 			this.heartbeatSubscriber.unsubscribe();
 		}
 	}
 
 	reload(): void {
 		this.dispatch(setFetching<T>(this.stateProperty, true));
-		get(buildPath(this.path, this.queryParameters), {
-			headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) }
-		}).then((data: T[]) => {
+		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
 			this.dispatch(setEntities<T>(this.stateProperty, data));
 			this.dispatch(setFetching<T>(this.stateProperty, false));
 			this.updateStream.reconnect();
-			this.listenForHeartBeat();
+			this.listenForHeartbeat();
 		}).catch((error: Error) => {
 			console.error(error);
 		});
 	}
 
 	private initUpdateStream() {
-		this.updateStream = new UpdateStream(buildPath(this.path, this.queryParameters, true),
-			{ headers: { Authorization: 'Basic ' + encode(this.userId + ':' + this.apiToken) } });
+		this.updateStream = new UpdateStream(buildUri(this.path, this.queryParameters, true), this.headers);
 
 		this.updateStream.addEventListener('update', (event: MessageEvent) => {
 			console.log('EventSource: New update event');
@@ -112,10 +107,12 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 	}
 
 	private heartbeatRetry() {
-		return retryWhen(errors => errors.pipe(mergeMap(error => this.retries-- > 0 ? of(error) : throwError('Maximum of retries reached!'))));
+		return retryWhen(errors => errors.pipe(mergeMap(error =>
+			this.heartbeatsMissing-- > 0 ? of(error) : throwError('Maximum of '
+				+ MAX_HEARTBEATS_MISSING + ' heartbeat(s) missed!'))));
 	}
 
-	private listenForHeartBeat(): void {
+	private listenForHeartbeat(): void {
 		this.heartbeatSubscriber = new Observable(observer => {
 			this.updateStream.addEventListener('heartbeat', () => {
 				observer.next();
@@ -124,7 +121,7 @@ export class LiveCollectionDatabinding<T extends Entity> extends AbstractDatabin
 			.subscribe({
 				next: () => {
 					console.log('EventSource: Heartbeat received');
-					this.retries = MAX_HEARTBEATS_MISSING;
+					this.heartbeatsMissing = MAX_HEARTBEATS_MISSING;
 				},
 				error: (error) => {
 					console.error('EventSource: Server is down (' + error + ')');

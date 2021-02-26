@@ -11,6 +11,7 @@ export {
 	Entity
 } from './redux/types';
 export { SingleDatabinding } from './databinding/SingleDatabinding';
+export { LiveSingleDatabinding } from './databinding/LiveSingleDatabinding';
 export { CollectionDatabinding } from './databinding/CollectionDatabinding';
 export {
 	LazyLoadingCollectionDatabinding

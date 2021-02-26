@@ -14,6 +14,15 @@ import { CollectionDatabinding } from './CollectionDatabinding';
  * Databinding for binding a collection of an Entity with Lazy loading.
  */
 export class LazyLoadingCollectionDatabinding<T extends Entity> extends CollectionDatabinding<T> {
+
+	/**
+	 *
+	 * @param path
+	 * @param headers
+	 * @param queryParameters
+	 * @param stateProperty Use nameof<T>(property) to typechecking property name.
+	 * @param dispatch
+	 */
 	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		const lazyLoadingQueryParam = convertToLazyLoadingQueryParam(queryParameters);
 		super(path, headers, lazyLoadingQueryParam, stateProperty, dispatch);

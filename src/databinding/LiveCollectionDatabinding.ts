@@ -16,6 +16,15 @@ import { AbstractLiveDatabinding } from './AbstractLiveDatabinding';
  * Databinding for binding a collection of an Entity with realtime updates.
  */
 export class LiveCollectionDatabinding<T extends Entity> extends AbstractLiveDatabinding<T> {
+
+	/**
+	 *
+	 * @param path
+	 * @param headers
+	 * @param queryParameters
+	 * @param stateProperty Use nameof<T>(property) to typechecking property name.
+	 * @param dispatch
+	 */
 	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		super(path, headers, queryParameters, stateProperty, dispatch);
 	}

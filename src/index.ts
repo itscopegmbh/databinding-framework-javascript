@@ -22,5 +22,7 @@ export {
 export { createDatabindingReducer } from './redux/reducers';
 export { UpdateStreamState } from './updateStream';
 export { IHeaders, IQueryParameters } from './utils/buildUri';
+export { nameof } from './utils/nameof';
+
 
 

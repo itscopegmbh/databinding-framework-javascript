@@ -8,6 +8,15 @@ import { AbstractDatabinding } from './AbstractDatabinding';
  * Databinding for binding a single Entity.
  */
 export class SingleDatabinding<T extends Entity> extends AbstractDatabinding<T> {
+
+	/**
+	 *
+	 * @param path
+	 * @param headers
+	 * @param queryParameters
+	 * @param stateProperty Use nameof<T>(property) to typechecking property name.
+	 * @param dispatch
+	 */
 	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
 		super(path, headers, queryParameters, stateProperty, dispatch);
 	}

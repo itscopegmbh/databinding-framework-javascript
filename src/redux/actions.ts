@@ -1,6 +1,8 @@
 import { UpdateStreamState } from '../updateStream';
+import { nameof } from '../utils/nameof';
 import {
 	Actions,
+	DatabindingState,
 	DELETE_ENTITY,
 	Entity,
 	INSERT_ENTITIES,
@@ -12,7 +14,7 @@ import {
 	UPDATE_ENTITY
 } from './types';
 
-export function setFetching<T extends Entity>(property: string, isFetching: boolean): Actions<T> {
+export function setFetching<T extends Entity, S extends DatabindingState>(property: nameof<S>, isFetching: boolean): Actions<T, S> {
 	return {
 		type: SET_FETCHING,
 		payload: {
@@ -22,7 +24,7 @@ export function setFetching<T extends Entity>(property: string, isFetching: bool
 	};
 }
 
-export function setConnectionState<T extends Entity>(property: string, connectionState: UpdateStreamState): Actions<T> {
+export function setConnectionState<T extends Entity, S extends DatabindingState>(property: nameof<S>, connectionState: UpdateStreamState): Actions<T, S> {
 	return {
 		type: SET_CONNECTION_STATE,
 		payload: {
@@ -32,7 +34,7 @@ export function setConnectionState<T extends Entity>(property: string, connectio
 	};
 }
 
-export function setEntity<T extends Entity>(property: string, entity: T): Actions<T> {
+export function setEntity<T extends Entity, S extends DatabindingState>(property: nameof<S>, entity: T): Actions<T, S> {
 	return {
 		type: SET_ENTITY,
 		payload: {
@@ -42,7 +44,7 @@ export function setEntity<T extends Entity>(property: string, entity: T): Action
 	};
 }
 
-export function setEntities<T extends Entity>(property: string, entities: T[]): Actions<T> {
+export function setEntities<T extends Entity, S extends DatabindingState>(property: nameof<S>, entities: T[]): Actions<T, S> {
 	return {
 		type: SET_ENTITIES,
 		payload: {
@@ -52,7 +54,7 @@ export function setEntities<T extends Entity>(property: string, entities: T[]): 
 	};
 }
 
-export function insertEntities<T extends Entity>(property: string, entities: T[]): Actions<T> {
+export function insertEntities<T extends Entity, S extends DatabindingState>(property: nameof<S>, entities: T[]): Actions<T, S> {
 	return {
 		type: INSERT_ENTITIES,
 		payload: {
@@ -62,7 +64,7 @@ export function insertEntities<T extends Entity>(property: string, entities: T[]
 	};
 }
 
-export function updateEntity<T extends Entity>(property: string, entity: T): Actions<T> {
+export function updateEntity<T extends Entity, S extends DatabindingState>(property: nameof<S>, entity: T): Actions<T, S> {
 	return {
 		type: UPDATE_ENTITY,
 		payload: {
@@ -72,7 +74,7 @@ export function updateEntity<T extends Entity>(property: string, entity: T): Act
 	};
 }
 
-export function insertEntity<T extends Entity>(property: string, entity: T): Actions<T> {
+export function insertEntity<T extends Entity, S extends DatabindingState>(property: nameof<S>, entity: T): Actions<T, S> {
 	return {
 		type: INSERT_ENTITY,
 		payload: {
@@ -82,7 +84,7 @@ export function insertEntity<T extends Entity>(property: string, entity: T): Act
 	};
 }
 
-export function deleteEntity<T extends Entity>(property: string, serial: { serial: string }): Actions<T> {
+export function deleteEntity<T extends Entity, S extends DatabindingState>(property: nameof<S>, serial: { serial: string }): Actions<T, S> {
 	return {
 		type: DELETE_ENTITY,
 		payload: {

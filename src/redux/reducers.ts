@@ -15,7 +15,7 @@ import {
 } from './types';
 
 export function createDatabindingReducer<S extends DatabindingState>(initialState: S): Reducer<S> {
-	return (state: S = initialState, action: Actions<Entity>) => {
+	return (state: S = initialState, action: Actions<Entity, S>) => {
 		switch (action.type) {
 			case SET_FETCHING: {
 				return {
@@ -62,7 +62,7 @@ export function createDatabindingReducer<S extends DatabindingState>(initialStat
 					...state,
 					[action.payload.property]: {
 						...state[action.payload.property],
-						entities: (state[action.payload.property] as LiveCollectionState<Entity>).entities.concat(action.payload.value)
+						entities: (state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities.concat(action.payload.value)
 					}
 				};
 			}
@@ -72,7 +72,7 @@ export function createDatabindingReducer<S extends DatabindingState>(initialStat
 					...state,
 					[action.payload.property]: {
 						...state[action.payload.property],
-						entities: (state[action.payload.property] as LiveCollectionState<Entity>).entities.map(
+						entities: (state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities.map(
 							(entity) => entity.uniqueId === action.payload.value.uniqueId ? action.payload.value : entity)
 					}
 				};
@@ -81,10 +81,10 @@ export function createDatabindingReducer<S extends DatabindingState>(initialStat
 			case INSERT_ENTITY: {
 				return {
 					...state,
-					[action.payload.property as keyof S]: {
+					[action.payload.property]: {
 						...state[action.payload.property],
 						entities: [
-							...(state[action.payload.property] as LiveCollectionState<Entity>).entities,
+							...(state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities,
 							action.payload.value
 						]
 					}
@@ -92,14 +92,14 @@ export function createDatabindingReducer<S extends DatabindingState>(initialStat
 			}
 
 			case DELETE_ENTITY: {
-				const indexToDelete = (state[action.payload.property] as LiveCollectionState<Entity>).entities.findIndex(entity => entity.uniqueId === action.payload.value.serial);
+				const indexToDelete = (state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities.findIndex(entity => entity.uniqueId === action.payload.value.serial);
 				return {
 					...state,
-					[action.payload.property as keyof S]: {
+					[action.payload.property]: {
 						...state[action.payload.property],
 						entities: [
-							...(state[action.payload.property] as LiveCollectionState<Entity>).entities.slice(0, indexToDelete),
-							...(state[action.payload.property] as LiveCollectionState<Entity>).entities.slice(indexToDelete + 1)
+							...(state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities.slice(0, indexToDelete),
+							...(state[action.payload.property] as unknown as LiveCollectionState<Entity>).entities.slice(indexToDelete + 1)
 						]
 					}
 				};

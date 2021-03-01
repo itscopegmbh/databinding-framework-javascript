@@ -1,6 +1,6 @@
 import { get } from '../fetch/fetch';
 import { insertEntities } from '../redux/actions';
-import { Actions, Entity } from '../redux/types';
+import { Actions, DatabindingState, Entity } from '../redux/types';
 import {
 	buildUri,
 	convertToLazyLoadingQueryParam,
@@ -8,22 +8,14 @@ import {
 	ILazyLoadingQueryParameters,
 	IQueryParameters
 } from '../utils/buildUri';
+import { nameof } from '../utils/nameof';
 import { CollectionDatabinding } from './CollectionDatabinding';
 
 /**
  * Databinding for binding a collection of an Entity with Lazy loading.
  */
-export class LazyLoadingCollectionDatabinding<T extends Entity> extends CollectionDatabinding<T> {
-
-	/**
-	 *
-	 * @param path
-	 * @param headers
-	 * @param queryParameters
-	 * @param stateProperty Use nameof<T>(property) to typechecking property name.
-	 * @param dispatch
-	 */
-	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
+export class LazyLoadingCollectionDatabinding<T extends Entity, S extends DatabindingState> extends CollectionDatabinding<T, S> {
+	constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: nameof<S>, dispatch: (action: Actions<T, S>) => void) {
 		const lazyLoadingQueryParam = convertToLazyLoadingQueryParam(queryParameters);
 		super(path, headers, lazyLoadingQueryParam, stateProperty, dispatch);
 	}
@@ -35,7 +27,7 @@ export class LazyLoadingCollectionDatabinding<T extends Entity> extends Collecti
 	getNextPage(): void {
 		(this.queryParameters as ILazyLoadingQueryParameters).page++;
 		get(buildUri(this.path, this.queryParameters), this.headers).then((data: T[]) => {
-			this.dispatch(insertEntities<T>(this.stateProperty, data));
+			this.dispatch(insertEntities<T, S>(this.stateProperty, data));
 		}).catch((error: Error) => {
 			console.error(error);
 		});

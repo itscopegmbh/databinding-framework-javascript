@@ -1,4 +1,5 @@
 import { UpdateStreamState } from '../updateStream';
+import { nameof } from '../utils/nameof';
 
 export interface Entity {
 	uniqueId: string;
@@ -58,79 +59,79 @@ export const UPDATE_ENTITY = 'UPDATE_ENTITY';
 export const INSERT_ENTITY = 'INSERT_ENTITY';
 export const DELETE_ENTITY = 'DELETE_ENTITY';
 
-interface SetFetchingAction {
+interface SetFetchingAction<S extends DatabindingState> {
 	type: typeof SET_FETCHING
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: boolean
 	}
 }
 
-interface SetConnectionStateAction {
+interface SetConnectionStateAction<S extends DatabindingState> {
 	type: typeof SET_CONNECTION_STATE
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: UpdateStreamState
 	}
 }
 
-interface SetEntityAction<T extends Entity> {
+interface SetEntityAction<T extends Entity, S extends DatabindingState> {
 	type: typeof SET_ENTITY
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: T
 	}
 }
 
-interface SetEntitiesAction<T extends Entity> {
+interface SetEntitiesAction<T extends Entity, S extends DatabindingState> {
 	type: typeof SET_ENTITIES
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: T[]
 	}
 }
 
-interface InsertEntitiesAction<T extends Entity> {
+interface InsertEntitiesAction<T extends Entity, S extends DatabindingState> {
 	type: typeof INSERT_ENTITIES
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: T[]
 	}
 }
 
-interface UpdateEntityAction<T extends Entity> {
+interface UpdateEntityAction<T extends Entity, S extends DatabindingState> {
 	type: typeof UPDATE_ENTITY
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: T
 	}
 }
 
-interface InsertEntityAction<T extends Entity> {
+interface InsertEntityAction<T extends Entity, S extends DatabindingState> {
 	type: typeof INSERT_ENTITY
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: T
 	}
 }
 
-interface DeleteEntityAction {
+interface DeleteEntityAction<S extends DatabindingState> {
 	type: typeof DELETE_ENTITY
 	payload: {
-		property: string,
+		property: nameof<S>,
 		value: {
 			serial: string
 		}
 	}
 }
 
-export type Actions<T extends Entity> =
-	SetFetchingAction
-	| SetConnectionStateAction
-	| SetEntityAction<T>
-	| SetEntitiesAction<T>
-	| InsertEntitiesAction<T>
-	| UpdateEntityAction<T>
-	| InsertEntityAction<T>
-	| DeleteEntityAction;
+export type Actions<T extends Entity, S extends DatabindingState> =
+	SetFetchingAction<S>
+	| SetConnectionStateAction<S>
+	| SetEntityAction<T, S>
+	| SetEntitiesAction<T, S>
+	| InsertEntitiesAction<T, S>
+	| UpdateEntityAction<T, S>
+	| InsertEntityAction<T, S>
+	| DeleteEntityAction<S>;
 

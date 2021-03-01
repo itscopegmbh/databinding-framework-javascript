@@ -1,7 +1,7 @@
 import { Observable, of, Subscription, throwError } from 'rxjs';
 import { mergeMap, retryWhen, timeout } from 'rxjs/operators';
 import { setConnectionState } from '../redux/actions';
-import { Actions, Entity } from '../redux/types';
+import { Actions, DatabindingState, Entity } from '../redux/types';
 import {
 	ErrorEvent,
 	StateEvent,
@@ -9,17 +9,18 @@ import {
 	UpdateStreamEvent
 } from '../updateStream';
 import { buildUri, IHeaders, IQueryParameters } from '../utils/buildUri';
+import { nameof } from '../utils/nameof';
 import { AbstractDatabinding } from './AbstractDatabinding';
 
 const MAX_HEARTBEATS_MISSING = 1;
 const TIMEOUT = 16000;
 
-export abstract class AbstractLiveDatabinding<T extends Entity> extends AbstractDatabinding<T> {
+export abstract class AbstractLiveDatabinding<T extends Entity, S extends DatabindingState> extends AbstractDatabinding<T, S> {
 	protected updateStream: UpdateStream;
 	protected heartbeatSubscriber: Subscription;
 	protected heartbeatsMissing: number = MAX_HEARTBEATS_MISSING;
 
-	protected constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: string, dispatch: (action: Actions<T>) => void) {
+	protected constructor(path: string, headers: IHeaders, queryParameters: IQueryParameters, stateProperty: nameof<S>, dispatch: (action: Actions<T, S>) => void) {
 		super(path, headers, queryParameters, stateProperty, dispatch);
 	}
 
@@ -44,7 +45,7 @@ export abstract class AbstractLiveDatabinding<T extends Entity> extends Abstract
 		this.updateStream.addEventListener(UpdateStreamEvent.STATE, (event: StateEvent) => {
 			console.log('EventSource: State changed to ' + event.data);
 
-			this.dispatch(setConnectionState<T>(this.stateProperty, this.updateStream.getState()));
+			this.dispatch(setConnectionState<T, S>(this.stateProperty, this.updateStream.getState()));
 		});
 
 		this.updateStream.addEventListener(UpdateStreamEvent.OPEN, () => {

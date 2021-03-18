@@ -54,7 +54,7 @@ export class LiveCollectionDatabinding<T extends Entity, S extends DatabindingSt
 		});
 	}
 
-	private initUpdateStream() {
+	private initUpdateStream(): void {
 		this.createUpdateStream();
 		this.addCommonEventListeners();
 

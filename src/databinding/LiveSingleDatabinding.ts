@@ -47,7 +47,7 @@ export class LiveSingleDatabinding<T extends Entity, S extends DatabindingState>
 		});
 	}
 
-	private initUpdateStream() {
+	private initUpdateStream(): void {
 		this.createUpdateStream();
 		this.addCommonEventListeners();
 
@@ -58,5 +58,4 @@ export class LiveSingleDatabinding<T extends Entity, S extends DatabindingState>
 			this.dispatch(setEntity<T, S>(this.stateProperty, data));
 		});
 	}
-
 }

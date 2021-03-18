@@ -13,11 +13,11 @@ interface State {
 	isFetching: boolean
 }
 
-export interface SingleState<T> extends State {
+export interface SingleState<T extends Entity> extends State {
 	entity: T
 }
 
-export interface CollectionState<T> extends State {
+export interface CollectionState<T extends Entity> extends State {
 	entities: T[]
 }
 
@@ -25,8 +25,8 @@ interface LiveState {
 	connectionState: UpdateStreamState,
 }
 
-export type LiveSingleState<T> = SingleState<T> & LiveState;
-export type LiveCollectionState<T> = CollectionState<T> & LiveState;
+export type LiveSingleState<T extends Entity> = SingleState<T> & LiveState;
+export type LiveCollectionState<T extends Entity> = CollectionState<T> & LiveState;
 
 export const initialCollectionState = {
 	entities: [],

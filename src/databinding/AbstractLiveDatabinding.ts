@@ -80,4 +80,6 @@ export abstract class AbstractLiveDatabinding<T extends Entity, S extends Databi
 				}
 			});
 	}
+
+	abstract reload(): void;
 }

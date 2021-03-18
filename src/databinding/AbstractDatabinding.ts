@@ -16,4 +16,6 @@ export abstract class AbstractDatabinding<T extends Entity, S extends Databindin
 		this.stateProperty = stateProperty;
 		this.dispatch = dispatch;
 	}
+
+	abstract getData(): void;
 }
